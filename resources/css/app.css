@@ -1,0 +1,215 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        text-rendering: optimizeLegibility;
+    }
+
+    :focus-visible {
+        outline: 2px solid #8a5f2e;
+        outline-offset: 3px;
+    }
+}
+
+@layer components {
+    .site-header {
+        @apply sticky top-0 z-40 border-b border-stone-200/80 bg-white/95 backdrop-blur;
+    }
+
+    .brand-mark {
+        @apply inline-flex items-center gap-3 text-left;
+    }
+
+    .brand-icon {
+        @apply flex size-10 shrink-0 items-center justify-center rounded-md bg-stone-950 text-sm font-semibold text-white;
+    }
+
+    .nav-link {
+        @apply rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-950;
+    }
+
+    .nav-link-active {
+        @apply bg-stone-100 text-stone-950;
+    }
+
+    .page-section {
+        @apply mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8;
+    }
+
+    .section-kicker {
+        @apply text-xs font-semibold uppercase tracking-[0.16em] text-amber-800;
+    }
+
+    .display-title {
+        @apply max-w-3xl text-4xl font-semibold leading-tight text-stone-950 sm:text-5xl;
+    }
+
+    .page-title {
+        @apply text-3xl font-semibold leading-tight text-stone-950;
+    }
+
+    .section-title {
+        @apply text-2xl font-semibold leading-tight text-stone-950;
+    }
+
+    .lede {
+        @apply max-w-2xl text-base leading-7 text-stone-600;
+    }
+
+    .btn {
+        @apply inline-flex min-h-11 items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .btn-primary {
+        @apply border-stone-950 bg-stone-950 text-white hover:bg-stone-800;
+    }
+
+    .btn-secondary {
+        @apply border-stone-300 bg-white text-stone-900 hover:border-stone-400 hover:bg-stone-50;
+    }
+
+    .btn-ghost {
+        @apply border-transparent bg-transparent text-stone-700 hover:bg-stone-100 hover:text-stone-950;
+    }
+
+    .btn-danger {
+        @apply border-red-200 bg-white text-red-700 hover:bg-red-50;
+    }
+
+    .panel {
+        @apply rounded-lg border border-stone-200 bg-white;
+    }
+
+    .panel-header {
+        @apply flex flex-col gap-4 border-b border-stone-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between;
+    }
+
+    .stat-panel {
+        @apply rounded-lg border border-stone-200 bg-white p-5;
+    }
+
+    .stat-label {
+        @apply text-sm font-medium text-stone-500;
+    }
+
+    .stat-value {
+        @apply mt-2 block text-3xl font-semibold leading-none text-stone-950;
+    }
+
+    .room-card {
+        @apply overflow-hidden rounded-lg border border-stone-200 bg-white transition hover:border-stone-300;
+    }
+
+    .room-image {
+        @apply h-56 w-full object-cover;
+    }
+
+    .field-label {
+        @apply grid gap-2 text-sm font-semibold text-stone-900;
+    }
+
+    .field-control {
+        @apply min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-950 transition placeholder:text-stone-400 hover:border-stone-400 focus:border-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-800/15 disabled:bg-stone-100 disabled:text-stone-500;
+    }
+
+    .field-error {
+        @apply text-sm font-medium text-red-700;
+    }
+
+    .badge {
+        @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold capitalize;
+    }
+
+    .badge-pending {
+        @apply border-amber-200 bg-amber-50 text-amber-800;
+    }
+
+    .badge-confirmed {
+        @apply border-emerald-200 bg-emerald-50 text-emerald-800;
+    }
+
+    .badge-cancelled {
+        @apply border-red-200 bg-red-50 text-red-700;
+    }
+
+    .alert {
+        @apply rounded-lg border px-4 py-3 text-sm font-medium;
+    }
+
+    .alert-success {
+        @apply border-emerald-200 bg-emerald-50 text-emerald-800;
+    }
+
+    .admin-shell {
+        @apply grid min-h-[calc(100vh-73px)] border-t border-stone-200 bg-stone-100/70 lg:grid-cols-[260px_1fr];
+    }
+
+    .admin-sidebar {
+        @apply border-b border-stone-200 bg-white p-4 lg:border-b-0 lg:border-r;
+    }
+
+    .admin-nav-link {
+        @apply flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-950;
+    }
+
+    .admin-nav-link-active {
+        @apply bg-stone-950 text-white hover:bg-stone-950 hover:text-white;
+    }
+
+    .data-table {
+        @apply w-full border-collapse text-left text-sm;
+    }
+
+    .data-table th {
+        @apply border-b border-stone-200 px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-stone-500;
+    }
+
+    .data-table td {
+        @apply border-b border-stone-100 px-5 py-4 align-top text-stone-700;
+    }
+
+    .empty-state {
+        @apply px-5 py-12 text-center;
+    }
+
+    @media (max-width: 760px) {
+        .responsive-table,
+        .responsive-table thead,
+        .responsive-table tbody,
+        .responsive-table th,
+        .responsive-table td,
+        .responsive-table tr {
+            display: block;
+        }
+
+        .responsive-table thead {
+            display: none;
+        }
+
+        .responsive-table tr {
+            @apply border-b border-stone-200 py-3;
+        }
+
+        .responsive-table td {
+            @apply border-0 px-5 py-2;
+        }
+
+        .responsive-table td::before {
+            content: attr(data-label);
+            @apply mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500;
+        }
+    }
+}
