@@ -1,4 +1,9 @@
-@extends('layouts.app', ['title' => 'Admin Dashboard | Aurelia Hotel', 'section' => 'admin'])
+@extends('layouts.app', [
+    'title' => 'Admin Dashboard | Aurelia Hotel',
+    'section' => 'admin',
+    'description' => 'Manage Aurelia Hotel reservation requests, room experiences, and booking status updates.',
+    'canonicalUrl' => route('dashboard'),
+])
 
 @section('content')
     <div class="admin-shell">
@@ -12,12 +17,12 @@
                     Dashboard
                     <span aria-hidden="true">01</span>
                 </a>
-                <a class="admin-nav-link" href="{{ route('bookings.create') }}">
-                    New booking
+                <a class="admin-nav-link" href="{{ route('services.index') }}">
+                    Rooms
                     <span aria-hidden="true">02</span>
                 </a>
-                <a class="admin-nav-link" href="{{ route('home') }}">
-                    Guest site
+                <a class="admin-nav-link" href="{{ route('calendar.export') }}">
+                    Calendar
                     <span aria-hidden="true">03</span>
                 </a>
             </nav>
@@ -30,10 +35,13 @@
                     <h2 class="page-title mt-3">Booking Dashboard</h2>
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-600">Review upcoming requests, confirm reservations, and monitor active room experiences.</p>
                 </div>
-                <a class="btn btn-primary" href="{{ route('bookings.create') }}">Create Booking</a>
+                <div class="flex flex-wrap gap-2">
+                    <a class="btn btn-secondary" href="{{ route('services.index') }}">Manage Rooms</a>
+                    <a class="btn btn-primary" href="{{ route('bookings.create') }}">Create Booking</a>
+                </div>
             </div>
 
-            <section class="grid gap-4 md:grid-cols-3" aria-label="Booking statistics">
+            <section class="grid gap-4 md:grid-cols-5" aria-label="Booking statistics">
                 <div class="stat-panel">
                     <span class="stat-label">Active rooms</span>
                     <strong class="stat-value">{{ $stats['services'] }}</strong>
@@ -49,19 +57,42 @@
                     <strong class="stat-value">{{ $stats['confirmed'] }}</strong>
                     <p class="mt-3 text-sm text-stone-500">Currently approved</p>
                 </div>
+                <div class="stat-panel">
+                    <span class="stat-label">Today</span>
+                    <strong class="stat-value">{{ $stats['today'] }}</strong>
+                    <p class="mt-3 text-sm text-stone-500">Arrivals on desk</p>
+                </div>
+                <div class="stat-panel">
+                    <span class="stat-label">Cancelled</span>
+                    <strong class="stat-value">{{ $stats['cancelled'] }}</strong>
+                    <p class="mt-3 text-sm text-stone-500">Closed requests</p>
+                </div>
             </section>
 
             <section class="panel mt-6 overflow-hidden">
                 <div class="panel-header">
                     <div>
                         <h2 class="text-xl font-semibold text-stone-950">Reservations</h2>
-                        <p class="mt-2 text-sm text-stone-600">Latest booking requests ordered by arrival time.</p>
+                        <p class="mt-2 text-sm text-stone-600">Filter arrivals, review guest details, and update booking status.</p>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="badge badge-pending">Pending</span>
-                        <span class="badge badge-confirmed">Confirmed</span>
-                        <span class="badge badge-cancelled">Cancelled</span>
-                    </div>
+                    <form class="grid gap-3 sm:grid-cols-[150px_180px_auto]" method="GET" action="{{ route('dashboard') }}">
+                        <label class="field-label">
+                            Status
+                            <select class="field-control" name="status">
+                                <option value="all" @selected($filters['status'] === 'all')>All</option>
+                                <option value="pending" @selected($filters['status'] === 'pending')>Pending</option>
+                                <option value="confirmed" @selected($filters['status'] === 'confirmed')>Confirmed</option>
+                                <option value="cancelled" @selected($filters['status'] === 'cancelled')>Cancelled</option>
+                            </select>
+                        </label>
+                        <label class="field-label">
+                            Arrival date
+                            <input class="field-control" type="date" name="date" value="{{ $filters['date'] }}">
+                        </label>
+                        <div class="flex items-end">
+                            <button class="btn btn-secondary w-full" type="submit">Filter</button>
+                        </div>
+                    </form>
                 </div>
 
                 @if ($bookings->isEmpty())
@@ -78,6 +109,7 @@
                                     <th>Guest</th>
                                     <th>Room</th>
                                     <th>Arrival</th>
+                                    <th>Notes</th>
                                     <th>Status</th>
                                     <th class="text-right">Actions</th>
                                 </tr>
@@ -88,14 +120,25 @@
                                         <td data-label="Guest">
                                             <strong class="block font-semibold text-stone-950">{{ $booking->customer_name }}</strong>
                                             <span class="text-stone-500">{{ $booking->customer_email }}</span>
+                                            @if ($booking->customer_phone)
+                                                <span class="mt-1 block text-stone-500">{{ $booking->customer_phone }}</span>
+                                            @endif
                                         </td>
                                         <td data-label="Room">
-                                            <span class="font-medium text-stone-950">{{ $booking->service->name }}</span>
-                                            <span class="mt-1 block text-stone-500">{{ $booking->service->formatted_price }}</span>
+                                            <div class="flex items-center gap-3">
+                                                <img src="{{ $booking->service->image_url }}" alt="" class="size-14 rounded-md object-cover">
+                                                <span>
+                                                    <span class="font-medium text-stone-950">{{ $booking->service->name }}</span>
+                                                    <span class="mt-1 block text-stone-500">{{ $booking->service->formatted_price }} · up to {{ $booking->service->max_guests ?? 2 }} guests</span>
+                                                </span>
+                                            </div>
                                         </td>
                                         <td data-label="Arrival">
                                             <span class="font-medium text-stone-950">{{ $booking->starts_at->format('M j, Y g:i A') }}</span>
                                             <span class="mt-1 block text-stone-500">Ends {{ $booking->ends_at->format('g:i A') }}</span>
+                                        </td>
+                                        <td data-label="Notes">
+                                            <span class="line-clamp-2 text-stone-600">{{ $booking->notes ?: 'No guest notes' }}</span>
                                         </td>
                                         <td data-label="Status">
                                             <span class="badge badge-{{ $booking->status }}">{{ $booking->status }}</span>

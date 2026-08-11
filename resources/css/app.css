@@ -34,7 +34,7 @@
     }
 
     .brand-icon {
-        @apply flex size-10 shrink-0 items-center justify-center rounded-md bg-stone-950 text-sm font-semibold text-white;
+        @apply size-10 shrink-0 rounded-md bg-stone-950 object-cover;
     }
 
     .nav-link {
@@ -181,8 +181,109 @@
         @apply border-b border-stone-100 px-5 py-4 align-top text-stone-700;
     }
 
+    .room-list-table tbody tr {
+        @apply transition hover:bg-stone-50;
+    }
+
     .empty-state {
         @apply px-5 py-12 text-center;
+    }
+
+    .modal-backdrop {
+        @apply fixed inset-0 z-50 flex items-center justify-center bg-stone-950/55 px-4 py-6;
+    }
+
+    .modal-panel {
+        @apply w-full max-w-4xl overflow-hidden rounded-lg border border-stone-200 bg-white shadow-xl;
+    }
+
+    .login-stage {
+        @apply relative isolate min-h-[calc(100vh-73px)] overflow-hidden bg-stone-950;
+    }
+
+    .login-slideshow {
+        @apply absolute inset-0 overflow-hidden;
+    }
+
+    .login-slide {
+        @apply absolute inset-0 h-full w-full object-cover opacity-0;
+        animation: login-slide-show 24s infinite;
+    }
+
+    .login-slide:nth-child(2) {
+        animation-delay: 6s;
+    }
+
+    .login-slide:nth-child(3) {
+        animation-delay: 12s;
+    }
+
+    .login-slide:nth-child(4) {
+        animation-delay: 18s;
+    }
+
+    .login-card {
+        @apply overflow-hidden rounded-lg border border-white/25 bg-white/95 shadow-2xl backdrop-blur;
+    }
+
+    .password-toggle {
+        @apply absolute right-2 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-stone-500 transition hover:bg-stone-100 hover:text-stone-950;
+    }
+
+    .upload-dropzone {
+        @apply flex min-h-36 cursor-pointer items-center gap-4 rounded-lg border border-dashed border-stone-300 bg-stone-50 p-5 transition hover:border-amber-800 hover:bg-amber-50/40;
+    }
+
+    .upload-dropzone.is-dragover {
+        @apply border-amber-800 bg-amber-50 ring-2 ring-amber-800/15;
+    }
+
+    .upload-icon {
+        @apply flex size-12 shrink-0 items-center justify-center rounded-md bg-white text-stone-700 ring-1 ring-stone-200;
+    }
+
+    .carousel-frame {
+        @apply relative;
+    }
+
+    .hero-carousel {
+        @apply min-w-0;
+    }
+
+    .carousel-slide {
+        @apply absolute inset-0 opacity-0 transition-opacity duration-500;
+    }
+
+    .carousel-slide.is-active {
+        @apply opacity-100;
+    }
+
+    .carousel-control {
+        @apply absolute top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-stone-950/65 text-2xl font-semibold leading-none text-white transition hover:bg-stone-950;
+    }
+
+    .carousel-dot {
+        @apply size-2.5 rounded-full border border-stone-400 bg-transparent transition hover:border-stone-950;
+    }
+
+    .carousel-dot.is-active {
+        @apply border-stone-950 bg-stone-950;
+    }
+
+    .carousel-dot-light {
+        @apply border-white/70 bg-white/40 hover:border-white;
+    }
+
+    .carousel-dot-light.is-active {
+        @apply border-white bg-white;
+    }
+
+    .carousel-thumb {
+        @apply shrink-0 rounded-md border border-transparent p-0.5 transition hover:border-stone-400;
+    }
+
+    .carousel-thumb-active {
+        @apply border-stone-950;
     }
 
     @media (max-width: 760px) {
@@ -211,5 +312,66 @@
             content: attr(data-label);
             @apply mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500;
         }
+
+        .room-list-table,
+        .room-list-table thead,
+        .room-list-table tbody,
+        .room-list-table th,
+        .room-list-table td,
+        .room-list-table tr {
+            display: block;
+        }
+
+        .room-list-table thead {
+            display: none;
+        }
+
+        .room-list-table tr {
+            @apply border-b border-stone-200 py-3;
+        }
+
+        .room-list-table td {
+            @apply border-0 px-5 py-2;
+        }
+
+        .room-list-table td::before {
+            content: attr(data-label);
+            @apply mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .login-slide {
+            animation: none;
+        }
+
+        .login-slide:first-child {
+            opacity: 1;
+        }
+    }
+}
+
+@keyframes login-slide-show {
+    0% {
+        opacity: 0;
+        transform: scale(1.04) translateX(2.5%);
+    }
+
+    8% {
+        opacity: 1;
+    }
+
+    28% {
+        opacity: 1;
+    }
+
+    38% {
+        opacity: 0;
+        transform: scale(1.12) translateX(-2.5%);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.12) translateX(-2.5%);
     }
 }

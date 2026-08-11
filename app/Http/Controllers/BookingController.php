@@ -4,9 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Service;
+use App\Models\User;
+use App\Notifications\BookingRequestReceived;
+use App\Notifications\BookingStatusChanged;
+use App\Support\Availability;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 
 class BookingController extends Controller
@@ -18,7 +23,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, Availability $availability): RedirectResponse
     {
         $validated = $request->validate([
             'service_id' => ['required', Rule::exists('services', 'id')->where('is_active', true)],
@@ -33,22 +38,31 @@ class BookingController extends Controller
         $startsAt = Carbon::parse($validated['starts_at'])->seconds(0);
         $endsAt = $startsAt->copy()->addMinutes($service->duration_minutes);
 
+        if ($message = $availability->validate($startsAt, $endsAt)) {
+            return back()
+                ->withErrors(['starts_at' => $message])
+                ->withInput();
+        }
+
         if (Booking::overlapping($service->id, $startsAt->toDateTimeString(), $endsAt->toDateTimeString())->exists()) {
             return back()
                 ->withErrors(['starts_at' => 'That time is already booked for the selected service.'])
                 ->withInput();
         }
 
-        Booking::create([
+        $booking = Booking::create([
             ...$validated,
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
             'status' => Booking::STATUS_PENDING,
         ]);
 
+        Notification::route('mail', $booking->customer_email)->notify(new BookingRequestReceived($booking));
+        User::where('role', User::ROLE_ADMIN)->each(fn (User $admin) => $admin->notify(new BookingRequestReceived($booking)));
+
         return redirect()
-            ->route('dashboard')
-            ->with('status', 'Booking request created. Review it from the dashboard.');
+            ->route('home')
+            ->with('status', 'Booking request created. The reservations team will review it soon.');
     }
 
     public function updateStatus(Request $request, Booking $booking): RedirectResponse
@@ -58,6 +72,7 @@ class BookingController extends Controller
         ]);
 
         $booking->update($validated);
+        Notification::route('mail', $booking->customer_email)->notify(new BookingStatusChanged($booking));
 
         return back()->with('status', 'Booking status updated.');
     }

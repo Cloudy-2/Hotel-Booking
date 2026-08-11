@@ -3,9 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
+use App\Models\AvailabilityRule;
 use App\Models\Service;
+use App\Models\User;
+use App\Notifications\BookingRequestReceived;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class BookingFlowTest extends TestCase
@@ -14,6 +18,8 @@ class BookingFlowTest extends TestCase
 
     public function test_home_and_dashboard_render_services(): void
     {
+        $admin = User::factory()->admin()->create();
+
         Service::create([
             'name' => 'Planning Session',
             'duration_minutes' => 45,
@@ -26,15 +32,21 @@ class BookingFlowTest extends TestCase
             ->assertSee('Curated room experiences')
             ->assertSee('Planning Session');
 
-        $this->get('/admin')
+        $this->actingAs($admin)->get('/admin/reservations')
             ->assertOk()
             ->assertSee('Booking Dashboard')
             ->assertSee('Planning Session');
+
+        $this->get('/admin')->assertRedirect('/admin/reservations');
+        $this->get('/bookings/create')->assertRedirect('/reserve');
     }
 
     public function test_customer_can_create_booking(): void
     {
+        Notification::fake();
         Carbon::setTestNow('2026-08-11 10:00:00');
+        User::factory()->admin()->create();
+        AvailabilityRule::create(['weekday' => 3, 'opens_at' => '08:00:00', 'closes_at' => '22:00:00']);
 
         $service = Service::create([
             'name' => 'Launch Support',
@@ -52,7 +64,7 @@ class BookingFlowTest extends TestCase
             'notes' => 'Please confirm by email.',
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('home'));
 
         $booking = Booking::first();
 
@@ -60,11 +72,13 @@ class BookingFlowTest extends TestCase
         $this->assertSame('avery@example.com', $booking->customer_email);
         $this->assertSame(Booking::STATUS_PENDING, $booking->status);
         $this->assertSame('2026-08-12 10:30:00', $booking->ends_at->format('Y-m-d H:i:s'));
+        Notification::assertSentOnDemand(BookingRequestReceived::class);
     }
 
     public function test_overlapping_booking_is_rejected_for_same_service(): void
     {
         Carbon::setTestNow('2026-08-11 10:00:00');
+        AvailabilityRule::create(['weekday' => 3, 'opens_at' => '08:00:00', 'closes_at' => '22:00:00']);
 
         $service = Service::create([
             'name' => 'Implementation Review',
@@ -82,7 +96,7 @@ class BookingFlowTest extends TestCase
             'status' => Booking::STATUS_CONFIRMED,
         ]);
 
-        $response = $this->from('/bookings/create')->post('/bookings', [
+        $response = $this->from('/reserve')->post('/bookings', [
             'service_id' => $service->id,
             'customer_name' => 'New Customer',
             'customer_email' => 'new@example.com',
@@ -90,7 +104,7 @@ class BookingFlowTest extends TestCase
         ]);
 
         $response
-            ->assertRedirect('/bookings/create')
+            ->assertRedirect('/reserve')
             ->assertSessionHasErrors('starts_at');
 
         $this->assertDatabaseMissing('bookings', [

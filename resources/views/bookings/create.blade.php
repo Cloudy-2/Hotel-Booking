@@ -1,4 +1,26 @@
-@extends('layouts.app', ['title' => 'Reserve a Room | Aurelia Hotel', 'section' => 'guest'])
+@extends('layouts.app', [
+    'title' => 'Reserve a Room | Aurelia Hotel',
+    'section' => 'guest',
+    'description' => 'Submit a room reservation request for Aurelia Hotel with clear guest details and booking summary.',
+    'canonicalUrl' => route('bookings.create'),
+])
+
+@php
+    $selectedServiceId = old('service_id', request('service_id'));
+    $selectedStartsAt = old('starts_at', request('starts_at'));
+    $selectedArrivalDate = now()->toDateString();
+    $selectedArrivalValue = '';
+
+    if ($selectedStartsAt) {
+        try {
+            $selectedArrival = \Carbon\Carbon::parse($selectedStartsAt);
+            $selectedArrivalDate = $selectedArrival->toDateString();
+            $selectedArrivalValue = $selectedArrival->format('Y-m-d\TH:i');
+        } catch (\Throwable) {
+            $selectedArrivalDate = now()->toDateString();
+        }
+    }
+@endphp
 
 @section('content')
     <section class="border-b border-stone-200 bg-white">
@@ -20,7 +42,7 @@
     </section>
 
     <section class="page-section">
-        <form method="POST" action="{{ route('bookings.store') }}" class="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+        <form method="POST" action="{{ route('bookings.store') }}" class="grid gap-6 xl:grid-cols-[1fr_380px] xl:items-start" data-reservation-form data-availability-url="{{ route('availability.check') }}">
             @csrf
 
             <div class="panel">
@@ -34,16 +56,87 @@
                 <div class="grid gap-5 p-5 sm:grid-cols-2">
                     <label class="field-label sm:col-span-2">
                         Room experience
-                        <select class="field-control" name="service_id" required>
+                        <select class="field-control" name="service_id" required data-room-select>
                             <option value="">Select a room</option>
                             @foreach ($services as $service)
-                                <option value="{{ $service->id }}" @selected(old('service_id', request('service_id')) == $service->id)>
+                                <option
+                                    value="{{ $service->id }}"
+                                    data-room-name="{{ $service->name }}"
+                                    data-room-rate="{{ $service->formatted_price }}"
+                                    @selected($selectedServiceId == $service->id)
+                                >
                                     {{ $service->name }} | {{ $service->duration_minutes }} min | {{ $service->formatted_price }}
                                 </option>
                             @endforeach
                         </select>
                         @error('service_id') <span class="field-error">{{ $message }}</span> @enderror
                     </label>
+
+                    <section class="sm:col-span-2" aria-live="polite">
+                        <div class="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-5 {{ $selectedServiceId ? 'hidden' : '' }}" data-room-empty>
+                            <p class="text-sm font-semibold text-stone-950">Select a room to preview your stay.</p>
+                            <p class="mt-2 text-sm leading-6 text-stone-600">The room gallery, amenities, rate, and key details will appear here before you submit the request.</p>
+                        </div>
+
+                        @foreach ($services as $service)
+                            <article class="selected-room-preview {{ $selectedServiceId == $service->id ? '' : 'hidden' }}" data-room-preview-panel="{{ $service->id }}">
+                                <div class="grid gap-0 overflow-hidden rounded-lg border border-stone-200 bg-white lg:grid-cols-[1.05fr_0.95fr]">
+                                    <div class="relative min-h-80 bg-stone-100" data-carousel aria-label="{{ $service->name }} selected room gallery">
+                                        @foreach ($service->gallery as $index => $imageUrl)
+                                            <img
+                                                src="{{ $imageUrl }}"
+                                                alt="{{ $index === 0 ? $service->name.' room gallery image' : '' }}"
+                                                class="carousel-slide {{ $index === 0 ? 'is-active' : '' }} h-full w-full object-cover"
+                                                data-carousel-slide
+                                            >
+                                        @endforeach
+                                        <button class="carousel-control left-3" type="button" data-carousel-prev aria-label="Previous {{ $service->name }} image">
+                                            <span aria-hidden="true">&lsaquo;</span>
+                                        </button>
+                                        <button class="carousel-control right-3" type="button" data-carousel-next aria-label="Next {{ $service->name }} image">
+                                            <span aria-hidden="true">&rsaquo;</span>
+                                        </button>
+                                        <div class="absolute bottom-3 left-3 flex gap-1.5">
+                                            @foreach ($service->gallery as $index => $imageUrl)
+                                                <button class="carousel-dot carousel-dot-light {{ $index === 0 ? 'is-active' : '' }}" type="button" data-carousel-dot="{{ $index }}" aria-label="Show {{ $service->name }} image {{ $index + 1 }}"></button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    <div class="p-5">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div>
+                                                <p class="section-kicker">Selected room</p>
+                                                <h3 class="mt-3 text-2xl font-semibold leading-tight text-stone-950">{{ $service->name }}</h3>
+                                            </div>
+                                            <span class="rounded-md bg-stone-950 px-3 py-2 text-sm font-semibold text-white">{{ $service->formatted_price }}</span>
+                                        </div>
+                                        <p class="mt-4 text-sm leading-6 text-stone-600">{{ $service->description }}</p>
+
+                                        <dl class="mt-5 grid grid-cols-2 gap-3 text-sm">
+                                            <div class="rounded-md border border-stone-200 p-3">
+                                                <dt class="text-stone-500">Stay window</dt>
+                                                <dd class="mt-1 font-semibold text-stone-950">{{ $service->duration_minutes }} min</dd>
+                                            </div>
+                                            <div class="rounded-md border border-stone-200 p-3">
+                                                <dt class="text-stone-500">Review status</dt>
+                                                <dd class="mt-1 font-semibold text-stone-950">Pending</dd>
+                                            </div>
+                                        </dl>
+
+                                        <div class="mt-5">
+                                            <p class="text-sm font-semibold text-stone-950">Amenities included</p>
+                                            <div class="mt-3 flex flex-wrap gap-2">
+                                                @foreach ($service->amenities as $amenity)
+                                                    <span class="rounded-full border border-stone-200 px-3 py-1 text-xs font-medium text-stone-600">{{ $amenity }}</span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        @endforeach
+                    </section>
 
                     <label class="field-label">
                         Full name
@@ -64,8 +157,16 @@
                     </label>
 
                     <label class="field-label">
+                        Arrival date
+                        <input class="field-control" type="date" value="{{ $selectedArrivalDate }}" min="{{ now()->toDateString() }}" required data-arrival-date>
+                    </label>
+
+                    <label class="field-label">
                         Arrival time
-                        <input class="field-control" type="datetime-local" name="starts_at" value="{{ old('starts_at') }}" required>
+                        <select class="field-control" required data-reservation-arrival-select data-selected-arrival="{{ $selectedArrivalValue }}">
+                            <option value="">Select a room and date first</option>
+                        </select>
+                        <input type="hidden" name="starts_at" value="{{ $selectedArrivalValue }}" data-starts-at-input>
                         @error('starts_at') <span class="field-error">{{ $message }}</span> @enderror
                     </label>
 
@@ -84,7 +185,9 @@
                     <dl class="mt-5 space-y-4 text-sm">
                         <div class="flex items-start justify-between gap-4 border-b border-stone-100 pb-3">
                             <dt class="text-stone-500">Room</dt>
-                            <dd class="text-right font-medium text-stone-950">Selected in form</dd>
+                            <dd class="text-right font-medium text-stone-950" data-summary-room>
+                                {{ optional($services->firstWhere('id', (int) $selectedServiceId))->name ?? 'Select a room' }}
+                            </dd>
                         </div>
                         <div class="flex items-start justify-between gap-4 border-b border-stone-100 pb-3">
                             <dt class="text-stone-500">Status</dt>
@@ -92,7 +195,9 @@
                         </div>
                         <div class="flex items-start justify-between gap-4 border-b border-stone-100 pb-3">
                             <dt class="text-stone-500">Rate</dt>
-                            <dd class="text-right font-medium text-stone-950">Shown by room</dd>
+                            <dd class="text-right font-medium text-stone-950" data-summary-rate>
+                                {{ optional($services->firstWhere('id', (int) $selectedServiceId))->formatted_price ?? 'Shown by room' }}
+                            </dd>
                         </div>
                         <div class="flex items-start justify-between gap-4">
                             <dt class="text-stone-500">Next step</dt>
@@ -101,7 +206,7 @@
                     </dl>
 
                     <div class="mt-6 grid gap-3">
-                        <button type="submit" class="btn btn-primary w-full">Submit Request</button>
+                        <button type="submit" class="btn btn-primary w-full" data-reservation-submit>Submit Request</button>
                         <a class="btn btn-secondary w-full" href="{{ route('home') }}">Back to Rooms</a>
                     </div>
                 </div>
