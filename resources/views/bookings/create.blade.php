@@ -207,7 +207,7 @@
 
                     <div class="mt-6 grid gap-3">
                         <button type="submit" class="btn btn-primary w-full" data-reservation-submit>Submit Request</button>
-                        <a class="btn btn-secondary w-full" href="{{ route('home') }}">Back to Rooms</a>
+                        <a class="btn btn-secondary w-full" href="{{ route('rooms.index') }}">Back to Rooms</a>
                     </div>
                 </div>
             </aside>

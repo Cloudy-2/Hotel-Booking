@@ -40,9 +40,12 @@ class ServiceController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        Service::create($this->validated($request));
+        $service = Service::create($this->validated($request));
 
-        return redirect()->route('services.index')->with('status', 'Room experience created.');
+        return redirect()->route('services.index')->with([
+            'feedback_title' => 'Room added',
+            'status' => $service->name . ' is now available in room management.',
+        ]);
     }
 
     /**
@@ -70,7 +73,10 @@ class ServiceController extends Controller
     {
         $service->update($this->validated($request, $service));
 
-        return redirect()->route('services.index')->with('status', 'Room experience updated.');
+        return redirect()->route('services.index')->with([
+            'feedback_title' => 'Room updated',
+            'status' => $service->name . ' has been updated across the guest booking experience.',
+        ]);
     }
 
     /**
@@ -80,7 +86,10 @@ class ServiceController extends Controller
     {
         $service->update(['is_active' => false]);
 
-        return redirect()->route('services.index')->with('status', 'Room experience disabled.');
+        return redirect()->route('services.index')->with([
+            'feedback_title' => 'Room disabled',
+            'status' => $service->name . ' is hidden from guest booking pages but remains in your inventory.',
+        ]);
     }
 
     private function validated(Request $request, ?Service $service = null): array

@@ -14,7 +14,8 @@
             <nav class="grid gap-1" aria-label="Admin navigation">
                 <a class="admin-nav-link" href="{{ route('dashboard') }}">Reservations <span>01</span></a>
                 <a class="admin-nav-link admin-nav-link-active" href="{{ route('services.index') }}">Rooms <span>02</span></a>
-                <a class="admin-nav-link" href="{{ route('calendar.export') }}">Calendar <span>03</span></a>
+                <a class="admin-nav-link" href="{{ route('availability.edit') }}">Availability <span>03</span></a>
+                <a class="admin-nav-link" href="{{ route('calendar.show') }}">Calendar <span>04</span></a>
             </nav>
         </aside>
 

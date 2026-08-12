@@ -9,7 +9,7 @@
 
 ## Domain Model
 
-- `Service`: a bookable offering with name, description, duration, price, and active status.
+- `Service`: a bookable room offering with name, description, uploaded/managed images, gallery, amenities, guest capacity, room size, duration, price, and active status.
 - `Booking`: a customer reservation for one service with start/end times, contact details, notes, and status.
 - `User`: an authenticated account with `admin` or `customer` role.
 - `AvailabilityRule`: opening and closing windows by weekday.
@@ -24,12 +24,14 @@ Local database settings live in `.env` and currently point to database `booking`
 - Create booking: `GET /bookings/create` renders the request form.
 - Store booking: `POST /bookings` validates input, calculates end time, rejects overlaps, and stores the request as pending.
 - Update status: `PATCH /bookings/{booking}/status` marks a booking confirmed or cancelled.
-- Service management: `/admin/services` lets admins create, edit, and disable rooms.
+- Service management: `/admin/services` lets admins create, edit, disable, and visually manage rooms.
+- Availability management: `/admin/availability` lets admins edit weekly reservation hours and holiday closures.
+- Calendar view: `GET /admin/calendar` shows confirmed bookings by arrival date.
 - Calendar export: `GET /admin/calendar.ics` downloads confirmed bookings.
 
 ## Access Roles
 
-- `admin`: can access reservation dashboard, service management, booking status updates, and calendar export.
+- `admin`: can access reservation dashboard, service management, availability settings, booking status updates, calendar view, and calendar export.
 - `customer`: can sign in but cannot access admin routes.
 - Guests can browse rooms and submit reservation requests.
 
@@ -50,3 +52,14 @@ existing.ends_at > new.starts_at
 ```
 
 Cancelled bookings are ignored by the conflict check.
+
+## Test Coverage
+
+The feature test suite runs against sqlite `:memory:` via `phpunit.xml`, keeping automated tests isolated from the local MySQL `booking` database.
+
+Current verification status:
+
+```text
+17 tests passed
+80 assertions passed
+```

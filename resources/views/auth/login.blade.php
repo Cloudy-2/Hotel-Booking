@@ -94,7 +94,7 @@
 
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <label class="flex items-center gap-2 text-sm font-medium text-stone-700">
-                            <input type="checkbox" name="remember" value="1" class="size-4 rounded border-stone-300 text-stone-950 focus:ring-amber-800">
+                            <input type="checkbox" name="remember" value="1" class="size-4 rounded border-stone-300 text-stone-950 focus:ring-stone-800">
                             Remember me
                         </label>
                         <span class="text-sm text-stone-500">Staff access only</span>

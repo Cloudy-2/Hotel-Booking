@@ -6,6 +6,7 @@ use App\Models\AvailabilityRule;
 use App\Models\Booking;
 use App\Models\Holiday;
 use App\Models\Service;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,5 +62,60 @@ class AvailabilityRuleTest extends TestCase
             ->assertOk()
             ->assertJsonPath('rooms.0.name', 'Morning Room')
             ->assertJsonPath('rooms.0.slots.0.label', '9:00 AM');
+    }
+
+    public function test_admin_can_manage_weekly_availability_rules(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $payload = ['rules' => []];
+
+        foreach (range(0, 6) as $weekday) {
+            $payload['rules'][$weekday] = [
+                'opens_at' => '09:00',
+                'closes_at' => '17:00',
+            ];
+        }
+
+        $payload['rules'][0]['is_closed'] = '1';
+
+        $this->actingAs($admin)
+            ->put(route('availability.update'), $payload)
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('availability_rules', [
+            'weekday' => 0,
+            'is_closed' => true,
+        ]);
+
+        $monday = AvailabilityRule::where('weekday', 1)->firstOrFail();
+
+        $this->assertSame('09:00', substr($monday->opens_at, 0, 5));
+        $this->assertSame('17:00', substr($monday->closes_at, 0, 5));
+        $this->assertFalse($monday->is_closed);
+    }
+
+    public function test_admin_can_manage_holiday_closures(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->post(route('holidays.store'), [
+                'date' => '2026-12-31',
+                'name' => 'New Year Preparation',
+                'is_closed' => '1',
+            ])
+            ->assertRedirect();
+
+        $holiday = Holiday::where('name', 'New Year Preparation')->firstOrFail();
+        $this->assertTrue($holiday->is_closed);
+
+        $this->actingAs($admin)
+            ->delete(route('holidays.destroy', $holiday))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('holidays', [
+            'name' => 'New Year Preparation',
+        ]);
     }
 }

@@ -3,9 +3,246 @@ const availabilityModal = document.querySelector('#availability-modal');
 const availabilityResults = document.querySelector('#availability-results');
 const availabilityMessage = document.querySelector('#availability-message');
 const availabilityModalAction = document.querySelector('#availability-modal-action');
+const siteHeader = document.querySelector('[data-site-header]');
 let lastAvailabilityData = null;
 let currentPreviewRoom = null;
 let currentCarouselIndex = 0;
+
+function updateHeaderSize() {
+    siteHeader?.classList.toggle('is-scrolled', window.scrollY > 16);
+}
+
+updateHeaderSize();
+window.addEventListener('scroll', updateHeaderSize, { passive: true });
+
+const revealItems = [...document.querySelectorAll('[data-scroll-reveal]')];
+const navLinks = [...document.querySelectorAll('[data-nav-link]')];
+const navSections = [...document.querySelectorAll('[data-nav-section]')];
+const contactMessage = document.querySelector('[data-contact-message]');
+const contactCount = document.querySelector('[data-contact-count]');
+const roomManagement = document.querySelector('[data-room-management]');
+const sweetAlertModal = document.querySelector('[data-swal-modal]');
+const sweetAlertIcon = document.querySelector('[data-swal-icon]');
+const sweetAlertTitle = document.querySelector('[data-swal-title]');
+const sweetAlertMessage = document.querySelector('[data-swal-message]');
+const sweetAlertConfirm = document.querySelector('[data-swal-confirm]');
+const sweetAlertCancel = document.querySelector('[data-swal-cancel]');
+let sweetAlertResolver = null;
+
+function showSweetAlert({
+    type = 'success',
+    title = '',
+    message = '',
+    confirmText = 'OK',
+    cancelText = '',
+} = {}) {
+    if (!sweetAlertModal || !sweetAlertIcon || !sweetAlertTitle || !sweetAlertMessage || !sweetAlertConfirm || !sweetAlertCancel) {
+        return Promise.resolve(window.confirm(message || title));
+    }
+
+    sweetAlertModal.classList.remove('hidden', 'is-success', 'is-error', 'is-warning');
+    sweetAlertModal.classList.add(`is-${type}`);
+    sweetAlertModal.setAttribute('aria-hidden', 'false');
+    sweetAlertIcon.textContent = type === 'error' ? 'Fix' : type === 'warning' ? '?' : type === 'info' ? 'Info' : 'Done';
+    sweetAlertTitle.textContent = title || {
+        error: 'A few details need attention',
+        info: 'Please note',
+        warning: 'Confirm action',
+        success: 'All set',
+    }[type] || 'All set';
+    sweetAlertMessage.textContent = message;
+    sweetAlertConfirm.textContent = confirmText;
+    sweetAlertCancel.textContent = cancelText || 'Cancel';
+    sweetAlertCancel.classList.toggle('hidden', !cancelText);
+    sweetAlertConfirm.focus();
+
+    return new Promise((resolve) => {
+        sweetAlertResolver = resolve;
+    });
+}
+
+function closeSweetAlert(result = false) {
+    if (!sweetAlertModal) {
+        return;
+    }
+
+    sweetAlertModal.classList.add('hidden');
+    sweetAlertModal.setAttribute('aria-hidden', 'true');
+    sweetAlertResolver?.(result);
+    sweetAlertResolver = null;
+}
+
+sweetAlertConfirm?.addEventListener('click', () => closeSweetAlert(true));
+sweetAlertCancel?.addEventListener('click', () => closeSweetAlert(false));
+sweetAlertModal?.addEventListener('click', (event) => {
+    if (event.target === sweetAlertModal) {
+        closeSweetAlert(false);
+    }
+});
+
+const feedback = document.querySelector('[data-swal-feedback]');
+
+if (feedback) {
+    showSweetAlert({
+        type: feedback.dataset.type || 'success',
+        title: feedback.dataset.title || '',
+        message: feedback.dataset.message || '',
+    });
+}
+
+document.querySelectorAll('[data-confirm-action]').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+        if (form.dataset.confirmed === 'true') {
+            return;
+        }
+
+        event.preventDefault();
+
+        const confirmed = await showSweetAlert({
+            type: 'warning',
+            title: form.dataset.confirmTitle || 'Confirm action',
+            message: form.dataset.confirmAction || 'Continue with this action?',
+            confirmText: form.dataset.confirmText || 'Yes, continue',
+            cancelText: form.dataset.cancelText || 'Keep editing',
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        form.dataset.confirmed = 'true';
+        form.requestSubmit(event.submitter);
+    });
+});
+
+document.querySelectorAll('form').forEach((form) => {
+    if (form.matches('#availability-form')) {
+        return;
+    }
+
+    form.addEventListener('submit', (event) => {
+        if (event.defaultPrevented) {
+            return;
+        }
+
+        const submitter = form.querySelector('button[type="submit"]');
+
+        if (!submitter || submitter.dataset.loadingBound === 'true') {
+            return;
+        }
+
+        submitter.dataset.loadingBound = 'true';
+        submitter.dataset.originalText = submitter.textContent.trim();
+        submitter.textContent = submitter.dataset.loadingText || 'Working...';
+        submitter.disabled = true;
+    });
+});
+
+if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                revealObserver.unobserve(entry.target);
+            }
+        });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+
+    revealItems.forEach((item) => revealObserver.observe(item));
+} else {
+    revealItems.forEach((item) => item.classList.add('is-visible'));
+}
+
+if (navLinks.length && navSections.length && 'IntersectionObserver' in window) {
+    const setActiveNav = (sectionId) => {
+        navLinks.forEach((link) => {
+            link.classList.toggle('nav-link-active', link.dataset.navLink === sectionId);
+        });
+    };
+
+    const navObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                setActiveNav(entry.target.dataset.navSection);
+            }
+        });
+    }, { rootMargin: '-28% 0px -55% 0px', threshold: 0.01 });
+
+    navSections.forEach((section) => navObserver.observe(section));
+}
+
+if (contactMessage && contactCount) {
+    const updateContactCount = () => {
+        contactCount.textContent = contactMessage.value.length;
+    };
+
+    contactMessage.addEventListener('input', updateContactCount);
+    updateContactCount();
+}
+
+if (roomManagement) {
+    const searchInput = roomManagement.querySelector('[data-room-search]');
+    const statusFilter = roomManagement.querySelector('[data-room-status-filter]');
+    const sortSelect = roomManagement.querySelector('[data-room-sort]');
+    const rows = [...roomManagement.querySelectorAll('[data-room-row]')];
+    const tableBody = rows[0]?.parentElement;
+    const visibleCount = roomManagement.querySelector('[data-room-visible-count]');
+    const emptyState = roomManagement.querySelector('[data-room-empty-state]');
+
+    const sortRows = () => {
+        const sortValue = sortSelect?.value || 'name';
+        const sortedRows = [...rows].sort((a, b) => {
+            if (sortValue === 'rate_desc') {
+                return Number(b.dataset.rate) - Number(a.dataset.rate);
+            }
+
+            if (sortValue === 'rate_asc') {
+                return Number(a.dataset.rate) - Number(b.dataset.rate);
+            }
+
+            if (sortValue === 'guests_desc') {
+                return Number(b.dataset.guests) - Number(a.dataset.guests);
+            }
+
+            return a.dataset.name.localeCompare(b.dataset.name);
+        });
+
+        sortedRows.forEach((row) => tableBody?.appendChild(row));
+    };
+
+    const applyRoomFilters = () => {
+        const query = (searchInput?.value || '').trim().toLowerCase();
+        const status = statusFilter?.value || 'all';
+        let count = 0;
+
+        rows.forEach((row) => {
+            const matchesQuery = !query || row.dataset.search.includes(query);
+            const matchesStatus = status === 'all' || row.dataset.status === status;
+            const isVisible = matchesQuery && matchesStatus;
+
+            row.classList.toggle('hidden', !isVisible);
+            if (isVisible) {
+                count += 1;
+            }
+        });
+
+        if (visibleCount) {
+            visibleCount.textContent = count;
+        }
+
+        emptyState?.classList.toggle('hidden', count > 0);
+    };
+
+    searchInput?.addEventListener('input', applyRoomFilters);
+    statusFilter?.addEventListener('change', applyRoomFilters);
+    sortSelect?.addEventListener('change', () => {
+        sortRows();
+        applyRoomFilters();
+    });
+
+    sortRows();
+    applyRoomFilters();
+}
 
 function initCarousel(carousel) {
     const slides = [...carousel.querySelectorAll('[data-carousel-slide]')];
@@ -546,6 +783,11 @@ availabilityModal?.addEventListener('click', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && sweetAlertModal && !sweetAlertModal.classList.contains('hidden')) {
+        closeSweetAlert(false);
+        return;
+    }
+
     if (event.key === 'Escape') {
         closeAvailabilityModal();
     }

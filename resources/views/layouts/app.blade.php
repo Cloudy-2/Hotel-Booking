@@ -3,6 +3,7 @@
     $section = $section ?? 'guest';
     $description = $description ?? 'A refined hotel booking experience for private stays, calm arrivals, and attentive reservations.';
     $canonicalUrl = $canonicalUrl ?? url()->current();
+    $isLanding = request()->routeIs('home');
 @endphp
 
 <!DOCTYPE html>
@@ -32,8 +33,8 @@
     </a>
 
     <div class="min-h-screen">
-        <header class="site-header">
-            <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <header class="site-header {{ $isLanding ? 'site-header-landing' : '' }}" data-site-header>
+            <div class="site-header-inner">
                 <a href="{{ route('home') }}" class="brand-mark" aria-label="Aurelia Hotel home">
                     <img src="{{ asset('site-icon.svg') }}" alt="" class="brand-icon">
                     <span>
@@ -43,10 +44,11 @@
                 </a>
 
                 <nav class="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
-                    <a class="nav-link {{ $section === 'guest' ? 'nav-link-active' : '' }}" href="{{ route('home') }}">Stay</a>
-                    <a class="nav-link" href="{{ route('home') }}#rooms">Rooms</a>
-                    <a class="nav-link" href="{{ route('home') }}#experience">Experience</a>
-                    <a class="nav-link {{ request()->routeIs('bookings.create') ? 'nav-link-active' : '' }}" href="{{ route('bookings.create') }}">Reserve</a>
+                    <a class="nav-link {{ $section === 'home' ? 'nav-link-active' : '' }}" href="{{ route('home') }}" data-nav-link="home">Home</a>
+                    <a class="nav-link {{ $section === 'hotel' ? 'nav-link-active' : '' }}" href="{{ route('hotel.show') }}" data-nav-link="hotel">The hotel</a>
+                    <a class="nav-link {{ $section === 'rooms' ? 'nav-link-active' : '' }}" href="{{ route('rooms.index') }}" data-nav-link="rooms">Our rooms</a>
+                    <a class="nav-link {{ $section === 'dining' ? 'nav-link-active' : '' }}" href="{{ route('dining.index') }}" data-nav-link="dining">Food and drink</a>
+                    <a class="nav-link {{ $section === 'contact' ? 'nav-link-active' : '' }}" href="{{ route('contact.show') }}" data-nav-link="contact">Contact</a>
                     @auth
                         @if (auth()->user()->isAdmin())
                             <a class="nav-link {{ $section === 'admin' ? 'nav-link-active' : '' }}" href="{{ route('dashboard') }}">Admin</a>
@@ -66,22 +68,38 @@
                     @else
                         <a class="btn btn-secondary hidden sm:inline-flex" href="{{ route('login') }}">Management</a>
                     @endauth
-                    <a class="btn btn-primary" href="{{ route('bookings.create') }}">Book Now</a>
+                    <a class="btn btn-booking" href="{{ route('bookings.create') }}">Booking</a>
                 </div>
             </div>
         </header>
 
-        @if (session('status'))
-            <div class="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
-                <div class="alert alert-success" role="status">{{ session('status') }}</div>
-            </div>
+        @if (session('status') || $errors->any())
+            <div
+                class="hidden"
+                data-swal-feedback
+                data-type="{{ $errors->any() ? 'error' : session('feedback_type', 'success') }}"
+                data-title="{{ $errors->any() ? 'A few details need attention' : session('feedback_title', 'All set') }}"
+                data-message="{{ $errors->any() ? $errors->first() : session('status') }}"
+            ></div>
         @endif
+
+        <div class="sweet-alert-backdrop hidden" data-swal-modal aria-hidden="true">
+            <section class="sweet-alert" role="dialog" aria-modal="true" aria-labelledby="sweet-alert-title" aria-describedby="sweet-alert-message">
+                <div class="sweet-alert-icon" data-swal-icon>OK</div>
+                <h2 id="sweet-alert-title" data-swal-title>Action completed</h2>
+                <p id="sweet-alert-message" data-swal-message>Your action was completed.</p>
+                <div class="sweet-alert-actions">
+                    <button class="btn btn-secondary hidden" type="button" data-swal-cancel>Cancel</button>
+                    <button class="btn btn-primary" type="button" data-swal-confirm>OK</button>
+                </div>
+            </section>
+        </div>
 
         <main id="content">
             @yield('content')
         </main>
 
-        <footer class="border-t border-stone-200 bg-stone-950 text-stone-300">
+        <footer id="contact" class="border-t border-stone-200 bg-stone-950 text-stone-300">
             <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 text-sm sm:px-6 md:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr] lg:px-8">
                 <div>
                     <div class="brand-mark">
@@ -94,8 +112,9 @@
                 <div>
                     <h2 class="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Hotel</h2>
                     <div class="mt-4 grid gap-2">
-                        <a class="hover:text-white" href="{{ route('home') }}#rooms">Rooms</a>
-                        <a class="hover:text-white" href="{{ route('home') }}#experience">Experience</a>
+                        <a class="hover:text-white" href="{{ route('rooms.index') }}">Rooms</a>
+                        <a class="hover:text-white" href="{{ route('dining.index') }}">Food and drink</a>
+                        <a class="hover:text-white" href="{{ route('hotel.show') }}">The hotel</a>
                         <a class="hover:text-white" href="{{ route('bookings.create') }}">Reservations</a>
                     </div>
                 </div>

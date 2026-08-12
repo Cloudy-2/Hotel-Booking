@@ -7,6 +7,7 @@ use App\Models\AvailabilityRule;
 use App\Models\Service;
 use App\Models\User;
 use App\Notifications\BookingRequestReceived;
+use App\Notifications\BookingStatusChanged;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -16,7 +17,7 @@ class BookingFlowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_home_and_dashboard_render_services(): void
+    public function test_rooms_page_and_dashboard_render_services(): void
     {
         $admin = User::factory()->admin()->create();
 
@@ -27,15 +28,40 @@ class BookingFlowTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->get('/')
+        $this->get('/rooms')
             ->assertOk()
             ->assertSee('Curated room experiences')
             ->assertSee('Planning Session');
+
+        $this->get('/hotel')
+            ->assertOk()
+            ->assertSee('Welcome to our boutique hotel.');
+
+        $this->get('/food-and-drink')
+            ->assertOk()
+            ->assertSee('Slow mornings, polished evenings.');
+
+        $this->get('/contact')
+            ->assertOk()
+            ->assertSee('Ask us anything.');
+
+        $this->post('/contact', [
+            'first_name' => 'Avery',
+            'last_name' => 'Stone',
+            'email' => 'avery@example.com',
+            'message' => 'Could you help with a late arrival?',
+        ])->assertRedirect()
+            ->assertSessionHas('status');
 
         $this->actingAs($admin)->get('/admin/reservations')
             ->assertOk()
             ->assertSee('Booking Dashboard')
             ->assertSee('Planning Session');
+
+        $this->actingAs($admin)->get('/admin/calendar')
+            ->assertOk()
+            ->assertSee('Confirmed stays')
+            ->assertSee('Export .ics');
 
         $this->get('/admin')->assertRedirect('/admin/reservations');
         $this->get('/bookings/create')->assertRedirect('/reserve');
@@ -110,5 +136,49 @@ class BookingFlowTest extends TestCase
         $this->assertDatabaseMissing('bookings', [
             'customer_email' => 'new@example.com',
         ]);
+    }
+
+    public function test_admin_can_update_booking_status_with_feedback(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create();
+
+        $service = Service::create([
+            'name' => 'Workspace Consultation',
+            'duration_minutes' => 45,
+            'price_cents' => 7500,
+            'is_active' => true,
+        ]);
+
+        $booking = Booking::create([
+            'service_id' => $service->id,
+            'customer_name' => 'Avery Stone',
+            'customer_email' => 'avery@example.com',
+            'starts_at' => now()->addDay(),
+            'ends_at' => now()->addDay()->addMinutes(45),
+            'status' => Booking::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('bookings.status', $booking), ['status' => Booking::STATUS_CONFIRMED])
+            ->assertRedirect()
+            ->assertSessionHas('feedback_title', 'Reservation confirmed');
+
+        $this->assertSame(Booking::STATUS_CONFIRMED, $booking->fresh()->status);
+
+        $this->actingAs($admin)
+            ->patch(route('bookings.status', $booking), ['status' => Booking::STATUS_CANCELLED])
+            ->assertRedirect()
+            ->assertSessionHas('feedback_title', 'Reservation cancelled');
+
+        $this->assertSame(Booking::STATUS_CANCELLED, $booking->fresh()->status);
+
+        $this->actingAs($admin)
+            ->patch(route('bookings.status', $booking), ['status' => Booking::STATUS_PENDING])
+            ->assertRedirect()
+            ->assertSessionHas('feedback_title', 'Reservation reopened');
+
+        $this->assertSame(Booking::STATUS_PENDING, $booking->fresh()->status);
+        Notification::assertSentOnDemand(BookingStatusChanged::class);
     }
 }

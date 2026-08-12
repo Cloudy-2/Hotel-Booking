@@ -29,7 +29,12 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()
+            ->intended(route('dashboard'))
+            ->with([
+                'feedback_title' => 'Welcome back',
+                'status' => 'You are signed in. Reservation operations are ready for review.',
+            ]);
     }
 
     public function logout(Request $request): RedirectResponse
@@ -39,6 +44,11 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('home')->with('status', 'You have been signed out.');
+        return redirect()
+            ->route('home')
+            ->with([
+                'feedback_title' => 'Signed out securely',
+                'status' => 'Your management session has ended. You can return to the guest site safely.',
+            ]);
     }
 }

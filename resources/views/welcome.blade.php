@@ -1,7 +1,7 @@
 @extends('layouts.app', [
     'title' => 'Aurelia Hotel | Luxury Stays',
-    'section' => 'guest',
-    'description' => 'Explore Aurelia Hotel rooms and begin a calm, premium reservation request.',
+    'section' => 'home',
+    'description' => 'Discover Aurelia Hotel, a calm boutique city stay with refined rooms and attentive reservations.',
     'canonicalUrl' => route('home'),
 ])
 
@@ -26,39 +26,70 @@
             'caption' => 'Restful rooms with considered details, generous light, and practical comfort.',
         ],
     ];
+
+    $reviews = [
+        [
+            'quote' => 'A beautiful room, easy check-in, and a team that handled every detail before we arrived.',
+            'guest' => 'Weekend guest',
+            'topic' => 'Room preparation',
+        ],
+        [
+            'quote' => 'The location made the whole trip simple. Breakfast, meetings, and dinner were all close by.',
+            'guest' => 'Business traveler',
+            'topic' => 'Location',
+        ],
+        [
+            'quote' => 'The room gallery helped us choose quickly, and the booking request was refreshingly clear.',
+            'guest' => 'Returning guest',
+            'topic' => 'Booking flow',
+        ],
+        [
+            'quote' => 'Our late arrival was handled calmly, and the room felt ready the second we opened the door.',
+            'guest' => 'Late arrival guest',
+            'topic' => 'Arrival support',
+        ],
+        [
+            'quote' => 'The staff remembered our requests and made the stay feel personal without ever interrupting the trip.',
+            'guest' => 'Couple stay',
+            'topic' => 'Service',
+        ],
+    ];
+
 @endphp
 
 @section('content')
-    <section class="bg-white">
-        <div class="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-14">
-            <div class="flex flex-col justify-center">
-                <p class="section-kicker">Private city hotel</p>
-                <h1 class="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-stone-950 sm:text-5xl lg:text-6xl">A quieter way to arrive, stay, and unwind.</h1>
-                <p class="mt-6 max-w-xl text-base leading-7 text-stone-600 sm:text-lg">Aurelia pairs refined rooms with a reservation experience that stays clear from the first search to the final confirmation.</p>
+    <section id="home" class="scroll-mt-28 bg-white" data-nav-section="home">
+        <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-16">
+            <div class="flex flex-col justify-center" data-scroll-reveal>
+                <p class="section-kicker">Aurelia Hotel</p>
+                <h1 class="mt-4 max-w-3xl text-4xl font-semibold leading-tight text-stone-950 sm:text-5xl lg:text-6xl">
+                    Wake up rested. Explore easily. Eat well. Sleep well in the heart of the city.
+                </h1>
+                <p class="mt-6 max-w-xl text-base leading-7 text-stone-700 sm:text-lg">A calm boutique stay with considered rooms, warm service, and simple reservations from first look to confirmation.</p>
 
                 <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a class="btn btn-primary" href="{{ route('bookings.create') }}">Reserve Your Stay</a>
-                    <a class="btn btn-secondary" href="#rooms">View Rooms</a>
+                    <a class="btn btn-booking" href="{{ route('bookings.create') }}">Book now</a>
+                    <a class="btn btn-secondary bg-white/70" href="#contact">Contact</a>
                 </div>
 
-                <dl class="mt-10 grid gap-5 border-t border-stone-200 pt-6 sm:grid-cols-3">
+                <dl class="mt-10 grid gap-5 border-t border-stone-300/70 pt-6 sm:grid-cols-3">
                     <div>
-                        <dt class="text-sm font-medium text-stone-500">Guest rating</dt>
-                        <dd class="mt-1 text-2xl font-semibold text-stone-950">4.9/5</dd>
+                        <dt class="text-sm font-medium text-stone-600">Waterfront walk</dt>
+                        <dd class="mt-1 text-2xl font-semibold text-stone-950">2 min</dd>
                     </div>
                     <div>
-                        <dt class="text-sm font-medium text-stone-500">Check-in support</dt>
+                        <dt class="text-sm font-medium text-stone-600">Dining nearby</dt>
+                        <dd class="mt-1 text-2xl font-semibold text-stone-950">100+</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-stone-600">Guest support</dt>
                         <dd class="mt-1 text-2xl font-semibold text-stone-950">24 hr</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-stone-500">Rooms prepared</dt>
-                        <dd class="mt-1 text-2xl font-semibold text-stone-950">Daily</dd>
                     </div>
                 </dl>
             </div>
 
-            <div class="hero-carousel" data-carousel data-carousel-autoplay="true" aria-label="Aurelia Hotel photography">
-                <div class="relative min-h-[460px] overflow-hidden rounded-lg bg-stone-900 lg:min-h-[580px]">
+            <div class="hero-carousel" data-carousel data-carousel-autoplay="true" data-scroll-reveal aria-label="Aurelia Hotel photography">
+                <div class="relative min-h-[430px] overflow-hidden rounded-lg bg-stone-900 shadow-2xl lg:min-h-[560px]">
                     @foreach ($heroSlides as $index => $slide)
                         <figure class="carousel-slide {{ $index === 0 ? 'is-active' : '' }}" data-carousel-slide>
                             <img src="{{ $slide['src'] }}" alt="{{ $slide['alt'] }}" class="h-full w-full object-cover">
@@ -89,16 +120,14 @@
         </div>
     </section>
 
-    <section class="border-y border-stone-200 bg-stone-100">
-        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <form id="availability-form" class="grid gap-4 rounded-lg border border-stone-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_auto]" action="{{ route('availability.check') }}" method="GET">
-                <label class="field-label">
-                    Arrival date
-                    <input class="field-control" type="date" name="date" min="{{ now()->toDateString() }}" required>
+    <section class="bg-white" data-scroll-reveal>
+        <div class="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+            <form id="availability-form" class="availability-strip" action="{{ route('availability.check') }}" method="GET">
+                <label class="availability-label">
+                    <span>Arrival</span>
+                    <input class="availability-control" type="date" name="date" min="{{ now()->toDateString() }}" required>
                 </label>
-                <div class="flex items-end">
-                    <button class="btn btn-primary w-full md:w-auto" type="submit">Check Availability</button>
-                </div>
+                <button class="btn btn-primary min-h-10 w-full px-4 py-2 sm:w-auto" type="submit">Check</button>
             </form>
         </div>
     </section>
@@ -117,89 +146,103 @@
         </div>
     </div>
 
-    <section id="rooms" class="page-section scroll-mt-24">
-        <div class="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
-            <div>
-                <p class="section-kicker">Rooms</p>
-                <h2 class="section-title mt-3">Curated room experiences</h2>
-            </div>
-            <p class="max-w-2xl text-base leading-7 text-stone-600 lg:justify-self-end">Compare rooms by atmosphere, rate, and key comforts. Each image feature can be browsed without leaving the page.</p>
-        </div>
+    <section id="experience" class="scroll-mt-28 bg-stone-50/70">
+        <div class="page-section">
+            <div class="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
+                <div data-scroll-reveal>
+                    <p class="section-kicker">Experience</p>
+                    <h2 class="mt-3 text-3xl font-semibold leading-tight text-stone-950 sm:text-4xl">Guest stays, told by the people who arrived.</h2>
+                    <p class="lede mt-5">Reviews highlight what matters most at Aurelia: clear booking, a central location, prepared rooms, and staff who keep every arrival calm.</p>
 
-        <div class="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            @forelse ($services as $service)
-                <article class="room-card">
-                    <div class="relative h-64 overflow-hidden bg-stone-100" data-carousel aria-label="{{ $service->name }} gallery">
-                        @foreach ($service->gallery as $index => $imageUrl)
-                            <img
-                                src="{{ $imageUrl }}"
-                                alt="{{ $index === 0 ? $service->name.' room view' : '' }}"
-                                class="carousel-slide {{ $index === 0 ? 'is-active' : '' }} h-full w-full object-cover"
-                                data-carousel-slide
-                            >
-                        @endforeach
-                        <button class="carousel-control left-3 size-9 text-xl" type="button" data-carousel-prev aria-label="Previous {{ $service->name }} image">
-                            <span aria-hidden="true">&lsaquo;</span>
-                        </button>
-                        <button class="carousel-control right-3 size-9 text-xl" type="button" data-carousel-next aria-label="Next {{ $service->name }} image">
-                            <span aria-hidden="true">&rsaquo;</span>
-                        </button>
-                        <div class="absolute bottom-3 left-3 flex gap-1.5">
-                            @foreach ($service->gallery as $index => $imageUrl)
-                                <button class="carousel-dot carousel-dot-light {{ $index === 0 ? 'is-active' : '' }}" type="button" data-carousel-dot="{{ $index }}" aria-label="Show room image {{ $index + 1 }}"></button>
-                            @endforeach
+                    <div class="mt-8 grid gap-3 sm:grid-cols-3">
+                        <div class="kpi-card kpi-card-featured">
+                            <span class="kpi-value">4.9</span>
+                            <span class="kpi-label">Average rating</span>
+                            <span class="kpi-note">Across recent guest stays</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-value">98%</span>
+                            <span class="kpi-label">Recommend</span>
+                            <span class="kpi-note">Would stay with us again</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-value">24h</span>
+                            <span class="kpi-label">Support</span>
+                            <span class="kpi-note">Arrival help when plans shift</span>
                         </div>
                     </div>
-
-                    <div class="p-5">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <h3 class="text-lg font-semibold text-stone-950">{{ $service->name }}</h3>
-                                <p class="mt-1 text-sm text-stone-500">Up to {{ $service->max_guests ?? 2 }} guests · {{ $service->room_size ?? 'Size on request' }}</p>
-                            </div>
-                            <span class="whitespace-nowrap text-base font-semibold text-stone-950">{{ $service->formatted_price }}</span>
-                        </div>
-                        <p class="mt-4 text-sm leading-6 text-stone-600">{{ $service->description }}</p>
-                        <div class="mt-5 flex flex-wrap gap-2 text-xs font-medium text-stone-600">
-                            @foreach (array_slice($service->amenities, 0, 3) as $amenity)
-                                <span class="rounded-full border border-stone-200 px-3 py-1">{{ $amenity }}</span>
-                            @endforeach
-                        </div>
-                        <a class="btn btn-primary mt-5 w-full" href="{{ route('bookings.create', ['service_id' => $service->id]) }}">Select Room</a>
-                    </div>
-                </article>
-            @empty
-                <div class="empty-state panel md:col-span-2 xl:col-span-3">
-                    <h3 class="text-lg font-semibold text-stone-950">No rooms are available right now.</h3>
-                    <p class="mt-2 text-sm text-stone-600">Please check back soon or contact the front desk for assistance.</p>
                 </div>
-            @endforelse
+
+                <div class="review-carousel" data-carousel data-carousel-autoplay="true" data-scroll-reveal aria-label="Customer reviews">
+                    <div class="review-stage">
+                        <div class="review-stage-header">
+                            <div>
+                                <p class="section-kicker">Customer reviews</p>
+                                <p class="mt-1 text-sm text-stone-500">Live impressions from recent stays</p>
+                            </div>
+                            <span class="review-score">4.9/5</span>
+                        </div>
+
+                        <div class="relative min-h-[300px] overflow-hidden">
+                        @foreach ($reviews as $index => $review)
+                            <figure class="testimonial-card testimonial-slide {{ $index === 0 ? 'is-active' : '' }}" data-carousel-slide>
+                                <span class="review-quote-mark" aria-hidden="true">"</span>
+                                <blockquote>"{{ $review['quote'] }}"</blockquote>
+                                <figcaption>
+                                    <span>{{ $review['guest'] }}</span>
+                                    <span>{{ $review['topic'] }}</span>
+                                </figcaption>
+                            </figure>
+                        @endforeach
+
+                            <button class="carousel-control testimonial-control testimonial-control-prev" type="button" data-carousel-prev aria-label="Previous customer review">
+                                <span aria-hidden="true">&lsaquo;</span>
+                            </button>
+                            <button class="carousel-control testimonial-control testimonial-control-next" type="button" data-carousel-next aria-label="Next customer review">
+                                <span aria-hidden="true">&rsaquo;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 flex items-center gap-2">
+                        <div class="flex gap-2" aria-label="Choose customer review">
+                            @foreach ($reviews as $index => $review)
+                                <button class="carousel-dot {{ $index === 0 ? 'is-active' : '' }}" type="button" data-carousel-dot="{{ $index }}" aria-label="Show review from {{ $review['guest'] }}"></button>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <section id="experience" class="scroll-mt-24 bg-white">
-        <div class="page-section grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
-            <div>
-                <p class="section-kicker">Experience</p>
-                <h2 class="section-title mt-3">A stay shaped around ease.</h2>
-                <p class="lede mt-4">The best luxury interfaces are quiet: clear decisions, useful details, and no friction when guests are ready to book.</p>
-            </div>
-            <div class="grid gap-5 sm:grid-cols-2">
-                <div class="border-t border-stone-200 pt-5">
-                    <h3 class="font-semibold text-stone-950">Transparent rates</h3>
-                    <p class="mt-2 text-sm leading-6 text-stone-600">Prices stay visible and easy to compare before the guest enters their details.</p>
+    <section class="bg-white">
+        <div class="page-section">
+            <div class="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-stretch">
+                <div class="flex flex-col justify-center" data-scroll-reveal>
+                    <p class="section-kicker">Location</p>
+                    <h2 class="section-title mt-3">Find us in the harbor district.</h2>
+                    <p class="lede mt-4">Aurelia Hotel is positioned for easy arrivals, waterfront walks, and quick access to dining, galleries, shopping, and the city center.</p>
+                    <div class="mt-6 grid gap-4 text-sm text-stone-600 sm:grid-cols-2">
+                        <div class="rounded-lg border border-stone-200 bg-stone-50 p-4">
+                            <span class="block font-semibold text-stone-950">Aurelia Hotel</span>
+                            <span class="mt-1 block">Harbor district</span>
+                        </div>
+                        <div class="rounded-lg border border-stone-200 bg-stone-50 p-4">
+                            <span class="block font-semibold text-stone-950">Nearby</span>
+                            <span class="mt-1 block">Waterfront, restaurants, galleries, and transit</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="border-t border-stone-200 pt-5">
-                    <h3 class="font-semibold text-stone-950">Calm reservation flow</h3>
-                    <p class="mt-2 text-sm leading-6 text-stone-600">The booking step asks for only the information needed to review the request.</p>
-                </div>
-                <div class="border-t border-stone-200 pt-5">
-                    <h3 class="font-semibold text-stone-950">Responsive browsing</h3>
-                    <p class="mt-2 text-sm leading-6 text-stone-600">Image galleries, forms, and calls to action stay comfortable on mobile screens.</p>
-                </div>
-                <div class="border-t border-stone-200 pt-5">
-                    <h3 class="font-semibold text-stone-950">Managed confirmation</h3>
-                    <p class="mt-2 text-sm leading-6 text-stone-600">Reservation staff can review requests and keep guest status clear.</p>
+
+                <div class="overflow-hidden rounded-lg border border-stone-200 bg-stone-100 shadow-sm" data-scroll-reveal>
+                    <iframe
+                        title="Google Map showing Aurelia Hotel in the harbor district"
+                        src="https://www.google.com/maps?q=Aurelia%20Hotel%20Harbor%20district&output=embed"
+                        class="h-[420px] w-full"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                    ></iframe>
                 </div>
             </div>
         </div>

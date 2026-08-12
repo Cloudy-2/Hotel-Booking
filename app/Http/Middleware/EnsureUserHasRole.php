@@ -17,7 +17,11 @@ class EnsureUserHasRole
     public function handle(Request $request, Closure $next, string ...$roles): Response|RedirectResponse
     {
         if (! $request->user()) {
-            return redirect()->route('login')->with('status', 'Please sign in to continue.');
+            return redirect()->route('login')->with([
+                'feedback_type' => 'info',
+                'feedback_title' => 'Sign in required',
+                'status' => 'Please sign in with a management account to continue.',
+            ]);
         }
 
         if (! in_array($request->user()->role, $roles, true)) {

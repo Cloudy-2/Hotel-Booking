@@ -6,6 +6,10 @@
 ])
 
 @section('content')
+    @php
+        $activeFilterCount = ($filters['status'] !== 'all' ? 1 : 0) + ($filters['date'] ? 1 : 0);
+    @endphp
+
     <div class="admin-shell">
         <aside class="admin-sidebar">
             <div class="mb-5 px-3">
@@ -21,19 +25,23 @@
                     Rooms
                     <span aria-hidden="true">02</span>
                 </a>
-                <a class="admin-nav-link" href="{{ route('calendar.export') }}">
-                    Calendar
+                <a class="admin-nav-link" href="{{ route('availability.edit') }}">
+                    Availability
                     <span aria-hidden="true">03</span>
+                </a>
+                <a class="admin-nav-link" href="{{ route('calendar.show') }}">
+                    Calendar
+                    <span aria-hidden="true">04</span>
                 </a>
             </nav>
         </aside>
 
         <section class="min-w-0 p-4 sm:p-6 lg:p-8">
-            <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div class="dashboard-hero mb-6">
                 <div>
                     <p class="section-kicker">Operations</p>
                     <h2 class="page-title mt-3">Booking Dashboard</h2>
-                    <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-600">Review upcoming requests, confirm reservations, and monitor active room experiences.</p>
+                    <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-600">Review requests, approve arrivals, and keep room operations moving from one focused workspace.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <a class="btn btn-secondary" href="{{ route('services.index') }}">Manage Rooms</a>
@@ -41,41 +49,41 @@
                 </div>
             </div>
 
-            <section class="grid gap-4 md:grid-cols-5" aria-label="Booking statistics">
-                <div class="stat-panel">
-                    <span class="stat-label">Active rooms</span>
-                    <strong class="stat-value">{{ $stats['services'] }}</strong>
-                    <p class="mt-3 text-sm text-stone-500">Available to guests</p>
-                </div>
-                <div class="stat-panel">
+            <section class="dashboard-stats" aria-label="Booking statistics">
+                <a class="dashboard-stat-card dashboard-stat-card-primary" href="{{ route('dashboard', ['status' => 'pending']) }}">
                     <span class="stat-label">Pending review</span>
                     <strong class="stat-value">{{ $stats['pending'] }}</strong>
-                    <p class="mt-3 text-sm text-stone-500">Need team action</p>
-                </div>
-                <div class="stat-panel">
+                    <p>Requests waiting for a team decision.</p>
+                </a>
+                <a class="dashboard-stat-card" href="{{ route('dashboard', ['status' => 'confirmed']) }}">
                     <span class="stat-label">Confirmed stays</span>
                     <strong class="stat-value">{{ $stats['confirmed'] }}</strong>
-                    <p class="mt-3 text-sm text-stone-500">Currently approved</p>
-                </div>
-                <div class="stat-panel">
+                    <p>Approved reservations on the books.</p>
+                </a>
+                <a class="dashboard-stat-card" href="{{ route('dashboard', ['date' => now()->toDateString()]) }}">
                     <span class="stat-label">Today</span>
                     <strong class="stat-value">{{ $stats['today'] }}</strong>
-                    <p class="mt-3 text-sm text-stone-500">Arrivals on desk</p>
-                </div>
-                <div class="stat-panel">
+                    <p>Arrivals scheduled for today.</p>
+                </a>
+                <a class="dashboard-stat-card" href="{{ route('services.index') }}">
+                    <span class="stat-label">Active rooms</span>
+                    <strong class="stat-value">{{ $stats['services'] }}</strong>
+                    <p>Room experiences available to guests.</p>
+                </a>
+                <a class="dashboard-stat-card" href="{{ route('dashboard', ['status' => 'cancelled']) }}">
                     <span class="stat-label">Cancelled</span>
                     <strong class="stat-value">{{ $stats['cancelled'] }}</strong>
-                    <p class="mt-3 text-sm text-stone-500">Closed requests</p>
-                </div>
+                    <p>Closed requests kept for reference.</p>
+                </a>
             </section>
 
-            <section class="panel mt-6 overflow-hidden">
-                <div class="panel-header">
+            <section class="reservation-desk mt-6">
+                <div class="reservation-toolbar">
                     <div>
                         <h2 class="text-xl font-semibold text-stone-950">Reservations</h2>
-                        <p class="mt-2 text-sm text-stone-600">Filter arrivals, review guest details, and update booking status.</p>
+                        <p class="mt-2 text-sm text-stone-600">{{ $bookings->count() }} {{ \Illuminate\Support\Str::plural('booking', $bookings->count()) }} shown{{ $activeFilterCount ? ' with ' . $activeFilterCount . ' active ' . \Illuminate\Support\Str::plural('filter', $activeFilterCount) : '' }}.</p>
                     </div>
-                    <form class="grid gap-3 sm:grid-cols-[150px_180px_auto]" method="GET" action="{{ route('dashboard') }}">
+                    <form class="reservation-filter-form" method="GET" action="{{ route('dashboard') }}">
                         <label class="field-label">
                             Status
                             <select class="field-control" name="status">
@@ -92,18 +100,35 @@
                         <div class="flex items-end">
                             <button class="btn btn-secondary w-full" type="submit">Filter</button>
                         </div>
+                        @if ($activeFilterCount)
+                            <div class="flex items-end">
+                                <a class="btn btn-ghost w-full" href="{{ route('dashboard') }}">Clear</a>
+                            </div>
+                        @endif
                     </form>
                 </div>
 
+                <div class="reservation-quick-filters" aria-label="Quick reservation filters">
+                    <a class="{{ $filters['status'] === 'all' && !$filters['date'] ? 'is-active' : '' }}" href="{{ route('dashboard') }}">All</a>
+                    <a class="{{ $filters['status'] === 'pending' ? 'is-active' : '' }}" href="{{ route('dashboard', ['status' => 'pending']) }}">Needs review</a>
+                    <a class="{{ $filters['status'] === 'confirmed' ? 'is-active' : '' }}" href="{{ route('dashboard', ['status' => 'confirmed']) }}">Confirmed</a>
+                    <a class="{{ $filters['date'] === now()->toDateString() ? 'is-active' : '' }}" href="{{ route('dashboard', ['date' => now()->toDateString()]) }}">Today</a>
+                    <a class="{{ $filters['status'] === 'cancelled' ? 'is-active' : '' }}" href="{{ route('dashboard', ['status' => 'cancelled']) }}">Cancelled</a>
+                </div>
+
                 @if ($bookings->isEmpty())
-                    <div class="empty-state">
-                        <h3 class="text-lg font-semibold text-stone-950">No reservations yet</h3>
-                        <p class="mt-2 text-sm text-stone-600">New guest requests will appear here once submitted.</p>
-                        <a class="btn btn-secondary mt-5" href="{{ route('bookings.create') }}">Create the first booking</a>
+                    <div class="reservation-empty-state">
+                        <span>No matches</span>
+                        <h3>No reservations found.</h3>
+                        <p>Try another status or date. New guest requests will appear here as soon as they are submitted.</p>
+                        <div class="mt-5 flex flex-wrap justify-center gap-2">
+                            <a class="btn btn-primary" href="{{ route('bookings.create') }}">Create booking</a>
+                            <a class="btn btn-secondary" href="{{ route('dashboard') }}">Reset filters</a>
+                        </div>
                     </div>
                 @else
                     <div class="overflow-x-auto">
-                        <table class="data-table responsive-table">
+                        <table class="data-table responsive-table reservation-table">
                             <thead>
                                 <tr>
                                     <th>Guest</th>
@@ -116,12 +141,17 @@
                             </thead>
                             <tbody>
                                 @foreach ($bookings as $booking)
-                                    <tr>
+                                    <tr class="reservation-row reservation-row-{{ $booking->status }}">
                                         <td data-label="Guest">
-                                            <strong class="block font-semibold text-stone-950">{{ $booking->customer_name }}</strong>
-                                            <span class="text-stone-500">{{ $booking->customer_email }}</span>
+                                            <div class="reservation-guest">
+                                                <span>{{ strtoupper(substr($booking->customer_name, 0, 1)) }}</span>
+                                                <div>
+                                                    <strong class="block font-semibold text-stone-950">{{ $booking->customer_name }}</strong>
+                                                    <a class="text-stone-500 hover:text-stone-950" href="mailto:{{ $booking->customer_email }}">{{ $booking->customer_email }}</a>
+                                                </div>
+                                            </div>
                                             @if ($booking->customer_phone)
-                                                <span class="mt-1 block text-stone-500">{{ $booking->customer_phone }}</span>
+                                                <a class="mt-2 block text-stone-500 hover:text-stone-950" href="tel:{{ $booking->customer_phone }}">{{ $booking->customer_phone }}</a>
                                             @endif
                                         </td>
                                         <td data-label="Room">
@@ -134,7 +164,8 @@
                                             </div>
                                         </td>
                                         <td data-label="Arrival">
-                                            <span class="font-medium text-stone-950">{{ $booking->starts_at->format('M j, Y g:i A') }}</span>
+                                            <span class="reservation-date">{{ $booking->starts_at->format('M j') }}</span>
+                                            <span class="font-medium text-stone-950">{{ $booking->starts_at->format('Y g:i A') }}</span>
                                             <span class="mt-1 block text-stone-500">Ends {{ $booking->ends_at->format('g:i A') }}</span>
                                         </td>
                                         <td data-label="Notes">
@@ -144,24 +175,41 @@
                                             <span class="badge badge-{{ $booking->status }}">{{ $booking->status }}</span>
                                         </td>
                                         <td data-label="Actions">
-                                            @if ($booking->status !== \App\Models\Booking::STATUS_CANCELLED)
-                                                <div class="flex flex-wrap justify-start gap-2 md:justify-end">
+                                            <div class="flex flex-wrap justify-start gap-2 md:justify-end">
+                                                @if ($booking->status === \App\Models\Booking::STATUS_PENDING)
                                                     <form method="POST" action="{{ route('bookings.status', $booking) }}">
                                                         @csrf
                                                         @method('PATCH')
                                                         <input type="hidden" name="status" value="confirmed">
-                                                        <button class="btn btn-secondary min-h-9 px-3 py-1.5" type="submit">Confirm</button>
+                                                        <button class="btn btn-secondary min-h-9 px-3 py-1.5" type="submit" data-loading-text="Confirming...">Confirm</button>
                                                     </form>
+                                                @endif
+
+                                                @if ($booking->status === \App\Models\Booking::STATUS_CANCELLED)
                                                     <form method="POST" action="{{ route('bookings.status', $booking) }}">
                                                         @csrf
                                                         @method('PATCH')
-                                                        <input type="hidden" name="status" value="cancelled">
-                                                        <button class="btn btn-danger min-h-9 px-3 py-1.5" type="submit">Cancel</button>
+                                                        <input type="hidden" name="status" value="pending">
+                                                        <button class="btn btn-secondary min-h-9 px-3 py-1.5" type="submit" data-loading-text="Reopening...">Reopen</button>
                                                     </form>
-                                                </div>
-                                            @else
-                                                <span class="block text-right text-sm text-stone-500 md:text-right">Closed</span>
-                                            @endif
+                                                @endif
+
+                                                @if ($booking->status !== \App\Models\Booking::STATUS_CANCELLED)
+                                                    <form
+                                                        method="POST"
+                                                        action="{{ route('bookings.status', $booking) }}"
+                                                        data-confirm-action="This will move {{ $booking->customer_name }}'s reservation to cancelled and notify the guest."
+                                                        data-confirm-title="Cancel reservation?"
+                                                        data-confirm-text="Yes, cancel it"
+                                                        data-cancel-text="Keep reservation"
+                                                    >
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="status" value="cancelled">
+                                                        <button class="btn btn-danger min-h-9 px-3 py-1.5" type="submit" data-loading-text="Cancelling...">Cancel</button>
+                                                    </form>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -173,7 +221,7 @@
 
             <section class="mt-6 grid gap-4 lg:grid-cols-3" aria-label="Active rooms">
                 @foreach ($services as $service)
-                    <article class="panel p-5">
+                    <article class="room-summary-card">
                         <div class="flex items-start justify-between gap-4">
                             <h3 class="font-semibold text-stone-950">{{ $service->name }}</h3>
                             <span class="text-sm font-semibold text-stone-950">{{ $service->formatted_price }}</span>

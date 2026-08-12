@@ -62,18 +62,44 @@ class BookingController extends Controller
 
         return redirect()
             ->route('home')
-            ->with('status', 'Booking request created. The reservations team will review it soon.');
+            ->with([
+                'feedback_title' => 'Booking request sent',
+                'status' => 'Thank you, ' . $booking->customer_name . '. The reservations team will review availability and contact you soon.',
+            ]);
     }
 
     public function updateStatus(Request $request, Booking $booking): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => ['required', Rule::in([Booking::STATUS_CONFIRMED, Booking::STATUS_CANCELLED])],
+            'status' => ['required', Rule::in([Booking::STATUS_PENDING, Booking::STATUS_CONFIRMED, Booking::STATUS_CANCELLED])],
         ]);
+
+        if ($booking->status === $validated['status']) {
+            return back()->with([
+                'feedback_type' => 'info',
+                'feedback_title' => 'No change needed',
+                'status' => $booking->customer_name . "'s reservation is already marked as " . $booking->status . '.',
+            ]);
+        }
 
         $booking->update($validated);
         Notification::route('mail', $booking->customer_email)->notify(new BookingStatusChanged($booking));
 
-        return back()->with('status', 'Booking status updated.');
+        $titles = [
+            Booking::STATUS_PENDING => 'Reservation reopened',
+            Booking::STATUS_CONFIRMED => 'Reservation confirmed',
+            Booking::STATUS_CANCELLED => 'Reservation cancelled',
+        ];
+
+        $messages = [
+            Booking::STATUS_PENDING => $booking->customer_name . "'s reservation is back in pending review.",
+            Booking::STATUS_CONFIRMED => $booking->customer_name . "'s stay is confirmed. A guest notification has been sent.",
+            Booking::STATUS_CANCELLED => $booking->customer_name . "'s reservation has been cancelled and the guest has been notified.",
+        ];
+
+        return back()->with([
+            'feedback_title' => $titles[$booking->status],
+            'status' => $messages[$booking->status],
+        ]);
     }
 }
